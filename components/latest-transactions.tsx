@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRightLeft, Clock, CheckCircle2, XCircle, Box } from 'lucide-react';
-import { formatTimeAgo, truncateHash, formatEther, formatNumber } from '@/lib/format-utils';
+import { ArrowRightLeft, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { formatTimeAgo, truncateHash, formatEther } from '@/lib/format-utils';
 import { getLatestTransactions } from '@/lib/api';
 import type { Transaction, PaginatedResponse } from '@/lib/api';
 import Link from 'next/link';
@@ -16,13 +16,46 @@ interface LatestTransactionsProps {
 export function LatestTransactions({ initialData }: LatestTransactionsProps) {
   const [transactions, setTransactions] = useState<PaginatedResponse<Transaction>>(initialData);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [newTxHashes, setNewTxHashes] = useState<Set<string>>(new Set());
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const previousTxHashesRef = useRef<Set<string>>(
+    new Set(initialData.data.map(tx => tx.hash))
+  );
 
+  // Update current time every second for live timestamps
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, []);
+
+  // Fetch new transactions every 10 seconds
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
         setIsRefreshing(true);
         const newTransactions = await getLatestTransactions(10);
+
+        // Find new transaction hashes
+        const currentTxHashes = new Set(newTransactions.data.map(tx => tx.hash));
+        const newHashes = new Set<string>();
+
+        currentTxHashes.forEach(hash => {
+          if (!previousTxHashesRef.current.has(hash)) {
+            newHashes.add(hash);
+          }
+        });
+
+        setNewTxHashes(newHashes);
         setTransactions(newTransactions);
+        previousTxHashesRef.current = currentTxHashes;
+
+        // Remove the "new" indicator after animation
+        setTimeout(() => {
+          setNewTxHashes(new Set());
+        }, 3000);
       } catch (error) {
         console.error('Error refreshing transactions:', error);
       } finally {
@@ -40,7 +73,7 @@ export function LatestTransactions({ initialData }: LatestTransactionsProps) {
           <ArrowRightLeft className="h-5 w-5 text-purple-600" />
           Latest Transactions
           {isRefreshing && (
-            <span className="ml-auto text-xs text-zinc-500">Updating...</span>
+            <span className="ml-auto text-xs text-zinc-500 animate-pulse">Updating...</span>
           )}
         </CardTitle>
         <CardDescription>Most recent transactions on the network</CardDescription>
@@ -48,48 +81,56 @@ export function LatestTransactions({ initialData }: LatestTransactionsProps) {
       <CardContent>
         {transactions && transactions.data.length > 0 ? (
           <div className="space-y-3">
-            {transactions.data.map((tx) => (
-              <Link
-                key={tx.hash}
-                href={`/tx/${tx.hash}`}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
-              >
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-blue-600 truncate max-w-[140px]">
-                      {truncateHash(tx.hash, 8, 6)}
-                    </span>
-                    {tx.status !== undefined && (
-                      <Badge variant={tx.status ? 'default' : 'destructive'} className="text-xs flex items-center gap-1">
-                        {tx.status ? (
-                          <>
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>Success</span>
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="h-3 w-3" />
-                            <span>Failed</span>
-                          </>
-                        )}
-                      </Badge>
-                    )}
+            {transactions.data.map((tx) => {
+              const isNew = newTxHashes.has(tx.hash);
+              return (
+                <Link
+                  key={tx.hash}
+                  href={`/tx/${tx.hash}`}
+                  className={`flex items-center justify-between p-3 border rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all ${
+                    isNew ? 'animate-slideInAndHighlight' : ''
+                  }`}
+                >
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-blue-600 truncate max-w-[140px]">
+                        {truncateHash(tx.hash, 8, 6)}
+                      </span>
+                      {isNew && (
+                        <Badge className="text-xs bg-green-500 hover:bg-green-600">New</Badge>
+                      )}
+                      {tx.status !== undefined && (
+                        <Badge variant={tx.status ? 'default' : 'destructive'} className="text-xs flex items-center gap-1">
+                          {tx.status ? (
+                            <>
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Success</span>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="h-3 w-3" />
+                              <span>Failed</span>
+                            </>
+                          )}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-zinc-500 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatTimeAgo(tx.timestamp)}
+                    </div>
+                    <div className="text-xs text-zinc-500">
+                      From {truncateHash(tx.from)} → {tx.to ? truncateHash(tx.to) : 'Contract'}
+                    </div>
                   </div>
-                  <div className="text-xs text-zinc-500 flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {formatTimeAgo(tx.timestamp)}
+                  <div className="ml-3 text-right">
+                    <div className="text-sm font-medium whitespace-nowrap">
+                      {formatEther(tx.value)} MON
+                    </div>
                   </div>
-                  <div className="text-xs text-zinc-500">
-                    From {truncateHash(tx.from)} → {tx.to ? truncateHash(tx.to) : 'Contract'}
-                  </div>
-                </div>
-                <div className="ml-3 text-right">
-                  <div className="text-sm font-medium whitespace-nowrap">
-                    {formatEther(tx.value)} MON
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm text-zinc-500 text-center py-8">No transactions available</p>
