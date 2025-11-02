@@ -148,23 +148,45 @@ export default async function AddressPage({ params }: AddressPageProps) {
                 </div>
               </div>
 
-              {addressData.isContract && addressData.contractCreator && (
+              {addressData.isContract && (
                 <>
                   <Separator />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Contract Creator</span>
-                      <Link href={`/address/${addressData.contractCreator}`} className="text-sm font-mono text-blue-600 hover:underline break-all">
-                        {addressData.contractCreator}
-                      </Link>
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Contract Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {addressData.contractCreator && (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Creator</span>
+                          <Link href={`/address/${addressData.contractCreator}`} className="text-sm font-mono text-blue-600 hover:underline break-all">
+                            {addressData.contractCreator}
+                          </Link>
+                        </div>
+                      )}
+
+                      {addressData.contractCreationTx && (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Deployment Transaction</span>
+                          <Link href={`/tx/${addressData.contractCreationTx}`} className="text-sm font-mono text-blue-600 hover:underline break-all">
+                            {truncateHash(addressData.contractCreationTx, 10, 8)}
+                          </Link>
+                        </div>
+                      )}
                     </div>
 
-                    {addressData.contractCreationTxHash && (
+                    {addressData.contractCode && (
                       <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Creation Tx</span>
-                        <Link href={`/tx/${addressData.contractCreationTxHash}`} className="text-sm font-mono text-blue-600 hover:underline break-all">
-                          {truncateHash(addressData.contractCreationTxHash, 10, 8)}
-                        </Link>
+                        <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Contract Bytecode</span>
+                        <div className="p-3 bg-zinc-100 dark:bg-zinc-900 rounded border overflow-x-auto">
+                          <code className="text-xs font-mono break-all">
+                            {addressData.contractCode.slice(0, 200)}
+                            {addressData.contractCode.length > 200 && '...'}
+                          </code>
+                        </div>
+                        {addressData.contractCode.length > 200 && (
+                          <span className="text-xs text-zinc-500">
+                            Showing first 200 characters of {addressData.contractCode.length} total
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

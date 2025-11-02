@@ -79,8 +79,11 @@ export interface Address {
   firstSeenBlock: string;
   lastSeenBlock: string;
   isContract: boolean;
+  contractCode: string | null;
   contractCreator: string | null;
-  contractCreationTxHash: string | null;
+  contractCreationTx: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TokenBalance {
@@ -211,5 +214,17 @@ export async function getAddressTokenTransfers(
     { cache: 'no-store' }
   );
   if (!res.ok) throw new Error(`Failed to fetch token transfers: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getContracts(
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<Address>> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/addresses/contracts/list?page=${page}&limit=${limit}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch contracts: ${res.statusText}`);
   return res.json();
 }
