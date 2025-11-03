@@ -1,8 +1,8 @@
-import { getTransaction } from '@/lib/api';
+import { getTransaction, getAddressMetadata, getAddress } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRightLeft, CheckCircle2, XCircle, Clock, Zap, FileCode, ArrowLeft, Box } from 'lucide-react';
+import { ArrowRightLeft, CheckCircle2, XCircle, Clock, Zap, FileCode, ArrowLeft, Box, Shield, Wallet } from 'lucide-react';
 import { formatEther, formatGwei, formatTimestamp, formatTimeAgo, truncateHash, formatNumber } from '@/lib/format-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -17,10 +17,24 @@ export default async function TransactionPage({ params }: TransactionPageProps) 
   const { hash } = await params;
 
   let transaction;
+  let fromMetadata;
+  let toMetadata;
+  let fromAddress;
+  let toAddress;
   let error;
 
   try {
     transaction = await getTransaction(hash);
+
+    // Fetch metadata and address info for from and to addresses in parallel
+    if (transaction) {
+      [fromMetadata, toMetadata, fromAddress, toAddress] = await Promise.all([
+        getAddressMetadata(transaction.from).catch(() => null),
+        transaction.to ? getAddressMetadata(transaction.to).catch(() => null) : Promise.resolve(null),
+        getAddress(transaction.from).catch(() => null),
+        transaction.to ? getAddress(transaction.to).catch(() => null) : Promise.resolve(null),
+      ]);
+    }
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to load transaction';
   }
@@ -147,21 +161,73 @@ export default async function TransactionPage({ params }: TransactionPageProps) 
 
               <Separator />
 
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">From</span>
-                <Link href={`/address/${transaction.from}`} className="text-sm font-mono text-blue-600 hover:underline break-all">
-                  {transaction.from}
-                </Link>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">From</span>
+                  {fromAddress?.isContract ? (
+                    <FileCode className="h-4 w-4 text-purple-600" title="Contract" />
+                  ) : (
+                    <Wallet className="h-4 w-4 text-zinc-400" title="Wallet" />
+                  )}
+                </div>
+                {fromMetadata ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Link href={`/address/${transaction.from}`} className="text-sm font-semibold text-blue-600 hover:underline">
+                        {fromMetadata.name}
+                      </Link>
+                      {fromMetadata.isVerified && (
+                        <Shield className="h-3 w-3 text-green-600" />
+                      )}
+                      {fromMetadata.symbol && (
+                        <Badge variant="outline" className="text-xs">{fromMetadata.symbol}</Badge>
+                      )}
+                    </div>
+                    <Link href={`/address/${transaction.from}`} className="text-xs font-mono text-zinc-600 dark:text-zinc-400 hover:text-blue-600 block break-all">
+                      {transaction.from}
+                    </Link>
+                  </div>
+                ) : (
+                  <Link href={`/address/${transaction.from}`} className="text-sm font-mono text-blue-600 hover:underline break-all">
+                    {transaction.from}
+                  </Link>
+                )}
               </div>
 
               <Separator />
 
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">To</span>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">To</span>
+                  {transaction.to && toAddress?.isContract ? (
+                    <FileCode className="h-4 w-4 text-purple-600" title="Contract" />
+                  ) : transaction.to ? (
+                    <Wallet className="h-4 w-4 text-zinc-400" title="Wallet" />
+                  ) : null}
+                </div>
                 {transaction.to ? (
-                  <Link href={`/address/${transaction.to}`} className="text-sm font-mono text-blue-600 hover:underline break-all">
-                    {transaction.to}
-                  </Link>
+                  toMetadata ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Link href={`/address/${transaction.to}`} className="text-sm font-semibold text-blue-600 hover:underline">
+                          {toMetadata.name}
+                        </Link>
+                        {toMetadata.isVerified && (
+                          <Shield className="h-3 w-3 text-green-600" />
+                        )}
+                        {toMetadata.symbol && (
+                          <Badge variant="outline" className="text-xs">{toMetadata.symbol}</Badge>
+                        )}
+                      </div>
+                      <Link href={`/address/${transaction.to}`} className="text-xs font-mono text-zinc-600 dark:text-zinc-400 hover:text-blue-600 block break-all">
+                        {transaction.to}
+                      </Link>
+                    </div>
+                  ) : (
+                    <Link href={`/address/${transaction.to}`} className="text-sm font-mono text-blue-600 hover:underline break-all">
+                      {transaction.to}
+                    </Link>
+                  )
                 ) : (
                   <Badge variant="secondary" className="w-fit">Contract Creation</Badge>
                 )}
@@ -249,10 +315,39 @@ export default async function TransactionPage({ params }: TransactionPageProps) 
 
               {transaction.type !== undefined && (
                 <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Type</span>
-                  <Badge variant="outline">
-                    {transaction.type === 0 ? 'Legacy' : transaction.type === 2 ? 'EIP-1559' : `Type ${transaction.type}`}
-                  </Badge>
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Transaction Type</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {transaction.type === 0 && 'Type 0 (Legacy)'}
+                      {transaction.type === 1 && 'Type 1 (EIP-2930)'}
+                      {transaction.type === 2 && 'Type 2 (EIP-1559)'}
+                      {transaction.type === 4 && 'Type 4 (EIP-7702)'}
+                      {transaction.type !== 0 && transaction.type !== 1 && transaction.type !== 2 && transaction.type !== 4 && `Type ${transaction.type}`}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+
+              {transaction.chainId !== undefined && transaction.chainId !== null && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Chain ID</span>
+                  <span className="text-sm">{transaction.chainId}</span>
+                </div>
+              )}
+
+              {transaction.methodId && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Method ID</span>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs font-mono bg-zinc-100 dark:bg-zinc-900 px-2 py-1 rounded">
+                      {transaction.methodId}
+                    </code>
+                    {transaction.functionSignature && (
+                      <Badge variant="secondary" className="text-xs">
+                        {transaction.functionSignature}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -268,6 +363,70 @@ export default async function TransactionPage({ params }: TransactionPageProps) 
                   <code className="text-xs font-mono break-all bg-zinc-100 dark:bg-zinc-900 p-3 rounded-lg overflow-x-auto">
                     {transaction.input}
                   </code>
+                </div>
+              </>
+            )}
+
+            {transaction.accessList && transaction.accessList.length > 0 && (
+              <>
+                <Separator />
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Access List (EIP-2930)</span>
+                  <div className="space-y-2">
+                    {transaction.accessList.map((item, index) => (
+                      <div key={index} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-zinc-500">Address:</span>
+                            <Link href={`/address/${item.address}`} className="text-xs font-mono text-blue-600 hover:underline">
+                              {item.address}
+                            </Link>
+                          </div>
+                          {item.storageKeys.length > 0 && (
+                            <div>
+                              <span className="text-xs font-medium text-zinc-500">Storage Keys ({item.storageKeys.length}):</span>
+                              {item.storageKeys.map((key, keyIndex) => (
+                                <code key={keyIndex} className="block text-xs font-mono text-zinc-600 dark:text-zinc-400 ml-4">
+                                  {key}
+                                </code>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {transaction.authorizationList && transaction.authorizationList.length > 0 && (
+              <>
+                <Separator />
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Authorization List (EIP-7702)</span>
+                  <div className="space-y-2">
+                    {transaction.authorizationList.map((auth, index) => (
+                      <div key={index} className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="font-medium text-zinc-500">Chain ID:</span>
+                            <span className="ml-2">{auth.chainId}</span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-zinc-500">Nonce:</span>
+                            <span className="ml-2">{auth.nonce}</span>
+                          </div>
+                          <div className="md:col-span-2">
+                            <span className="font-medium text-zinc-500">Address:</span>
+                            <Link href={`/address/${auth.address}`} className="ml-2 font-mono text-blue-600 hover:underline">
+                              {auth.address}
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </>
             )}

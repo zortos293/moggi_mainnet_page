@@ -16,13 +16,16 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Box, ArrowRightLeft, Wallet, Search } from 'lucide-react';
+import { Box, ArrowRightLeft, Wallet, Search, Shield } from 'lucide-react';
 import { detectSearchType, getSearchTypeLabel, getSearchUrl, SearchType } from '@/lib/search-utils';
+import type { AddressMetadata } from '@/lib/api';
 
 export function SearchCommand() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState<SearchType>('unknown');
+  const [metadata, setMetadata] = useState<AddressMetadata | null>(null);
+  const [loadingMetadata, setLoadingMetadata] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -41,8 +44,27 @@ export function SearchCommand() {
     if (query.trim()) {
       const result = detectSearchType(query.trim());
       setSearchType(result.type);
+
+      // Fetch metadata if it's an address
+      if (result.type === 'address') {
+        setLoadingMetadata(true);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+        fetch(`${apiUrl}/api/metadata/address/${query.trim()}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            setMetadata(data);
+            setLoadingMetadata(false);
+          })
+          .catch(() => {
+            setMetadata(null);
+            setLoadingMetadata(false);
+          });
+      } else {
+        setMetadata(null);
+      }
     } else {
       setSearchType('unknown');
+      setMetadata(null);
     }
   }, [query]);
 
@@ -53,9 +75,20 @@ export function SearchCommand() {
       const url = getSearchUrl(result);
       setOpen(false);
       setQuery('');
+      setMetadata(null);
       router.push(url);
     }
   }, [query, searchType, router]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setQuery('');
+      setSearchType('unknown');
+      setMetadata(null);
+      setLoadingMetadata(false);
+    }
+  }, [open]);
 
   const getIcon = (type: SearchType) => {
     switch (type) {
@@ -109,8 +142,26 @@ export function SearchCommand() {
                     className="flex items-center gap-3 cursor-pointer"
                   >
                     {getIcon(searchType)}
-                    <div className="flex-1 truncate">
-                      <span className="truncate font-mono text-sm">{trimmedQuery}</span>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      {searchType === 'address' && metadata ? (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm">{metadata.name}</span>
+                            {metadata.isVerified && (
+                              <Shield className="h-3 w-3 text-green-600" />
+                            )}
+                            {metadata.symbol && (
+                              <Badge variant="outline" className="text-xs">{metadata.symbol}</Badge>
+                            )}
+                          </div>
+                          <div className="truncate font-mono text-xs text-muted-foreground">{trimmedQuery}</div>
+                          {metadata.category && (
+                            <div className="text-xs text-muted-foreground">{metadata.category}</div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="truncate font-mono text-sm">{trimmedQuery}</span>
+                      )}
                     </div>
                     <Badge variant="secondary">{getSearchTypeLabel(searchType)}</Badge>
                   </CommandItem>

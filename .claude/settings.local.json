@@ -4,7 +4,8 @@
       "Bash(bun add:*)",
       "Bash(bunx shadcn@latest init:*)",
       "Bash(bunx shadcn@latest add:*)",
-      "Bash(bun run build)"
+      "Bash(bun run build)",
+      "Bash(dir /s /b \"C:\\Users\\Zortos\\moggi_mainnet_page\\app\")"
     ],
     "deny": [],
     "ask": []

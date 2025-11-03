@@ -41,9 +41,13 @@ export interface Transaction {
   transactionIndex: number;
   nonce: number;
   input?: string;
+  methodId?: string;
+  functionSignature?: string;
   status?: boolean;
   type?: number;
   chainId?: number;
+  accessList?: { address: string; storageKeys: string[] }[];
+  authorizationList?: { chainId: string; address: string; nonce: string; v: string; r: string; s: string }[];
   v?: string;
   r?: string;
   s?: string;
@@ -114,6 +118,66 @@ export interface TokenTransfer {
   timestamp: string;
   logIndex: number;
   token: Token;
+}
+
+export interface AddressMetadata {
+  address: string;
+  name: string;
+  label: string;
+  symbol?: string;
+  category?: string;
+  entityType?: string;
+  isToken?: boolean;
+  tokenStandard?: string;
+  decimals?: number;
+  projectName?: string;
+  isCanonical?: boolean;
+  isVerified?: boolean;
+  description?: string;
+  website?: string;
+  twitter?: string;
+  github?: string;
+  docs?: string;
+  logoUri?: string;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface NFTCollection {
+  address: string;
+  name: string;
+  symbol: string;
+  tokenType: 'ERC721' | 'ERC1155';
+  totalSupply?: string;
+  contractUri?: string;
+  transferCount?: number;
+  holderCount?: number;
+  createdAt?: string;
+}
+
+export interface NFTToken {
+  collectionAddress: string;
+  tokenId: string;
+  owner?: string;
+  owners?: { owner: string; amount: string }[];
+  tokenUri?: string;
+  metadata?: string;
+  amount?: string;
+  collection?: NFTCollection;
+}
+
+export interface NFTTransfer {
+  collectionAddress: string;
+  tokenId: string;
+  from: string;
+  to: string;
+  amount: string;
+  tokenType: 'ERC721' | 'ERC1155';
+  transactionHash: string;
+  blockNumber: string;
+  timestamp: string;
+  collection?: NFTCollection;
 }
 
 export interface PaginatedResponse<T> {
@@ -226,5 +290,57 @@ export async function getContracts(
     { cache: 'no-store' }
   );
   if (!res.ok) throw new Error(`Failed to fetch contracts: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getAddressInternalTransactions(
+  address: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<InternalTransaction>> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/addresses/${address}/internal-transactions?page=${page}&limit=${limit}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch internal transactions: ${res.statusText}`);
+  return res.json();
+}
+
+// Metadata API
+export async function getAddressMetadata(address: string): Promise<AddressMetadata | null> {
+  const res = await fetch(`${API_BASE_URL}/api/metadata/address/${address}`, {
+    cache: 'no-store',
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to fetch address metadata: ${res.statusText}`);
+  return res.json();
+}
+
+// NFT API
+export async function getAddressNFTs(
+  address: string,
+  page: number = 1,
+  limit: number = 20,
+  type?: 'ERC721' | 'ERC1155'
+): Promise<PaginatedResponse<NFTToken>> {
+  const typeParam = type ? `&type=${type}` : '';
+  const res = await fetch(
+    `${API_BASE_URL}/api/nfts/address/${address}/nfts?page=${page}&limit=${limit}${typeParam}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch NFTs: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getAddressNFTTransfers(
+  address: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<NFTTransfer>> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/nfts/address/${address}/nft-transfers?page=${page}&limit=${limit}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch NFT transfers: ${res.statusText}`);
   return res.json();
 }
