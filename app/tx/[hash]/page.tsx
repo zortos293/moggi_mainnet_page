@@ -348,13 +348,13 @@ export default async function TransactionPage({ params }: TransactionPageProps) 
                   {transaction.erc20TokensTransferred.map((transfer, index) => (
                     <tr key={index} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
+                        <Link href={`/token/${transfer.token.address}`} className="flex items-center gap-2 hover:opacity-80">
                           <Badge className="bg-green-600 text-xs">ERC-20</Badge>
                           <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{transfer.token.name}</span>
                           <Badge variant="outline" className="bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-[#ff66c4] text-xs">
                             {transfer.token.symbol}
                           </Badge>
-                        </div>
+                        </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Link href={`/address/${transfer.from}`} className="text-sm font-mono text-[#ff66c4] hover:text-pink-400">
@@ -367,9 +367,9 @@ export default async function TransactionPage({ params }: TransactionPageProps) 
                         </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <span className="text-sm font-mono font-semibold text-green-600 dark:text-green-400">
+                        <Link href={`/token/${transfer.token.address}`} className="text-sm font-mono font-semibold text-green-600 dark:text-green-400 hover:text-green-500">
                           {(Number(transfer.value) / Math.pow(10, transfer.token.decimals)).toLocaleString()} {transfer.token.symbol}
-                        </span>
+                        </Link>
                       </td>
                     </tr>
                   ))}

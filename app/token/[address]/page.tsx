@@ -206,13 +206,16 @@ export default async function TokenPage({ params, searchParams }: TokenPageProps
                             </Link>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <span className="text-sm font-mono font-semibold text-zinc-700 dark:text-zinc-200">
+                            <span className="text-sm font-mono font-semibold text-green-600 dark:text-green-400">
                               {transfer.value ? (
                                 formatTokenAmount(transfer.value, token.decimals || 18)
                               ) : transfer.tokenId ? (
                                 `#${transfer.tokenId}`
                               ) : '-'}
                             </span>
+                            {transfer.value && (
+                              <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-1">{token.symbol}</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
