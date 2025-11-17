@@ -3,6 +3,7 @@ import {
   getAddressTransactions,
   getAddressInternalTransactions,
   getAddressMetadata,
+  getContractMetadata,
 } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +19,9 @@ import {
   CheckCircle2,
   XCircle,
   Zap,
+  Globe,
+  ExternalLink,
+  Layers,
 } from 'lucide-react';
 import { formatEther, formatTimeAgo, truncateHash, formatNumber } from '@/lib/format-utils';
 import Link from 'next/link';
@@ -45,14 +49,16 @@ export default async function ContractPage({ params, searchParams }: ContractPag
 
   let contractData;
   let metadata;
+  let contractMetadata;
   let transactions;
   let internalTxs;
   let error;
 
   try {
-    [contractData, metadata, transactions, internalTxs] = await Promise.all([
+    [contractData, metadata, contractMetadata, transactions, internalTxs] = await Promise.all([
       getAddress(address),
       getAddressMetadata(address).catch(() => null),
+      getContractMetadata(address).catch(() => null),
       getAddressTransactions(address, txPage, 20),
       getAddressInternalTransactions(address, internalPage, 20).catch(() => ({
         data: [],
@@ -119,14 +125,28 @@ export default async function ContractPage({ params, searchParams }: ContractPag
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-[#ff66c4] rounded-lg">
-              <FileCode2 className="h-6 w-6 text-white" />
-            </div>
+            {contractMetadata?.protocol?.logoUrl ? (
+              <img
+                src={contractMetadata.protocol.logoUrl}
+                alt={contractMetadata.protocol.name}
+                className="w-12 h-12 rounded-lg"
+              />
+            ) : (
+              <div className="p-3 bg-[#ff66c4] rounded-lg">
+                <FileCode2 className="h-6 w-6 text-white" />
+              </div>
+            )}
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl font-mono font-bold text-zinc-900 dark:text-white">
-                  {truncateHash(address, 8, 8)}
-                </h1>
+              <div className="flex items-center gap-3 flex-wrap">
+                {contractMetadata?.contractName || contractMetadata?.nickname ? (
+                  <h1 className="text-xl font-bold text-zinc-900 dark:text-white">
+                    {contractMetadata.nickname || contractMetadata.contractName}
+                  </h1>
+                ) : (
+                  <h1 className="text-xl font-mono font-bold text-zinc-900 dark:text-white">
+                    {truncateHash(address, 8, 8)}
+                  </h1>
+                )}
                 <Badge variant="outline" className="text-xs bg-transparent border-[#ff66c4] text-[#ff66c4]">
                   CONTRACT
                 </Badge>
@@ -135,6 +155,46 @@ export default async function ContractPage({ params, searchParams }: ContractPag
               <div className="text-xs font-mono text-zinc-500 dark:text-zinc-400 mt-1 break-all">
                 {address}
               </div>
+              {contractMetadata?.protocol && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-0">
+                    <Layers className="h-3 w-3 mr-1" />
+                    {contractMetadata.protocol.name}
+                  </Badge>
+                  {contractMetadata.protocol.website && (
+                    <a
+                      href={contractMetadata.protocol.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-zinc-500 hover:text-[#ff66c4] flex items-center gap-1"
+                    >
+                      <Globe className="h-3 w-3" />
+                      Website
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                  {contractMetadata.protocol.docs && (
+                    <a
+                      href={contractMetadata.protocol.docs}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-zinc-500 hover:text-[#ff66c4]"
+                    >
+                      Docs
+                    </a>
+                  )}
+                  {contractMetadata.protocol.github && (
+                    <a
+                      href={contractMetadata.protocol.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-zinc-500 hover:text-[#ff66c4]"
+                    >
+                      GitHub
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <Link href="/">
@@ -192,6 +252,21 @@ export default async function ContractPage({ params, searchParams }: ContractPag
           </div>
 
           <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            {contractMetadata?.notes && (
+              <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="col-span-1">
+                  <span className="text-xs font-semibold text-zinc-500 uppercase">
+                    Notes
+                  </span>
+                </div>
+                <div className="col-span-3">
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                    {contractMetadata.notes}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {contractData.contractCreator && (
               <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="col-span-1">

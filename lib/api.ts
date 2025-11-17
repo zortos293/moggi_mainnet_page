@@ -92,6 +92,15 @@ export interface Address {
   contractCreationTx: string | null;
   createdAt?: string;
   updatedAt?: string;
+  // Protocol and metadata fields
+  contractName?: string;
+  nickname?: string;
+  notes?: string;
+  protocol?: {
+    name: string;
+    logoUrl?: string;
+    website?: string;
+  };
 }
 
 export interface TokenBalance {
@@ -582,5 +591,145 @@ export async function getBlockchainStats(): Promise<BlockchainStats> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`Failed to fetch blockchain stats: ${res.statusText}`);
+  return res.json();
+}
+
+// Protocol and Contract Metadata Types
+export interface Protocol {
+  id: number;
+  name: string;
+  description?: string;
+  logoUrl?: string;
+  website?: string;
+  twitter?: string;
+  github?: string;
+  docs?: string;
+  discord?: string;
+  telegram?: string;
+  isLive?: boolean;
+  indexedAt?: string;
+  contractCount?: number;
+  contracts?: ProtocolContract[];
+}
+
+export interface ProtocolContract {
+  address: string;
+  contractName?: string;
+  nickname?: string;
+  notes?: string;
+  creatorAddress?: string;
+  creationTxHash?: string;
+  creationBlockNumber?: string;
+  isErc20?: boolean;
+  isErc721?: boolean;
+  isErc1155?: boolean;
+  verified?: boolean;
+  tokenInfo?: {
+    name?: string;
+    symbol?: string;
+    decimals?: number;
+  };
+}
+
+export interface ContractMetadata {
+  address: string;
+  contractName?: string;
+  nickname?: string;
+  notes?: string;
+  indexedAt?: string;
+  protocol?: {
+    id: number;
+    name: string;
+    description?: string;
+    logoUrl?: string;
+    website?: string;
+    twitter?: string;
+    github?: string;
+    docs?: string;
+    discord?: string;
+    telegram?: string;
+    isLive?: boolean;
+  };
+  creatorAddress?: string;
+  creationTxHash?: string;
+  creationBlockNumber?: string;
+  isErc20?: boolean;
+  isErc721?: boolean;
+  isErc1155?: boolean;
+  verified?: boolean;
+}
+
+// Protocol API Functions
+export async function getProtocols(
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<Protocol>> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/protocols?page=${page}&limit=${limit}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch protocols: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getProtocol(idOrName: string): Promise<Protocol> {
+  const res = await fetch(`${API_BASE_URL}/api/protocols/${idOrName}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Failed to fetch protocol: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getProtocolContracts(
+  idOrName: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<ProtocolContract> & { protocol: Protocol }> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/protocols/${idOrName}/contracts?page=${page}&limit=${limit}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch protocol contracts: ${res.statusText}`);
+  return res.json();
+}
+
+// Contract Metadata API Functions
+export async function getContractMetadata(address: string): Promise<ContractMetadata> {
+  const res = await fetch(`${API_BASE_URL}/api/contracts/${address}/metadata`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Failed to fetch contract metadata: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getContractsWithMetadata(
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<ContractMetadata>> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/contracts/with-metadata?page=${page}&limit=${limit}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch contracts with metadata: ${res.statusText}`);
+  return res.json();
+}
+
+export async function searchContracts(
+  protocol?: string,
+  name?: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<ContractMetadata>> {
+  const params = new URLSearchParams();
+  if (protocol) params.append('protocol', protocol);
+  if (name) params.append('name', name);
+  params.append('page', page.toString());
+  params.append('limit', limit.toString());
+
+  const res = await fetch(
+    `${API_BASE_URL}/api/contracts/search?${params.toString()}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to search contracts: ${res.statusText}`);
   return res.json();
 }

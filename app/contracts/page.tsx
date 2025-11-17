@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileCode2, ArrowLeft, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
+import { FileCode2, ArrowLeft, ChevronLeft, ChevronRight, Copy, Globe, ExternalLink } from 'lucide-react';
 import { truncateHash, formatNumber } from '@/lib/format-utils';
 import { getContracts } from '@/lib/api';
 import type { Address, PaginatedResponse } from '@/lib/api';
@@ -96,8 +96,8 @@ export default function ContractsPage() {
                   <thead>
                     <tr className="border-b border-zinc-200 dark:border-zinc-800">
                       <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">CONTRACT ADDRESS</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">NAME / PROTOCOL</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">CREATOR</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">DEPLOYMENT TX</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">BLOCK</th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-zinc-500 uppercase">TXS</th>
                     </tr>
@@ -116,18 +116,44 @@ export default function ContractsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col gap-1">
+                            {contract.contractName || contract.nickname ? (
+                              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+                                {contract.nickname || contract.contractName}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-zinc-400 dark:text-zinc-600">-</span>
+                            )}
+                            {contract.protocol && (
+                              <div className="flex items-center gap-1.5">
+                                {contract.protocol.logoUrl && (
+                                  <img
+                                    src={contract.protocol.logoUrl}
+                                    alt={contract.protocol.name}
+                                    className="w-4 h-4 rounded"
+                                  />
+                                )}
+                                <Badge className="text-[10px] bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-0">
+                                  {contract.protocol.name}
+                                </Badge>
+                                {contract.protocol.website && (
+                                  <a
+                                    href={contract.protocol.website}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-zinc-400 hover:text-[#ff66c4]"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           {contract.contractCreator ? (
                             <Link href={`/address/${contract.contractCreator}`} className="text-sm font-mono text-zinc-600 dark:text-zinc-400 hover:text-[#ff66c4]">
                               {truncateHash(contract.contractCreator, 6, 4)}
-                            </Link>
-                          ) : (
-                            <span className="text-zinc-400 dark:text-zinc-600">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {contract.contractCreationTx ? (
-                            <Link href={`/tx/${contract.contractCreationTx}`} className="text-sm font-mono text-zinc-600 dark:text-zinc-400 hover:text-[#ff66c4]">
-                              {truncateHash(contract.contractCreationTx, 6, 4)}
                             </Link>
                           ) : (
                             <span className="text-zinc-400 dark:text-zinc-600">-</span>

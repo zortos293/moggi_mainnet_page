@@ -6,7 +6,8 @@ import {
   getAddressMetadata,
   getAddressNFTs,
   getAddressNFTTransfers,
-  getAddressInternalTransactions
+  getAddressInternalTransactions,
+  getContractMetadata,
 } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,7 +24,10 @@ import {
   ArrowDownLeft,
   ImageIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Globe,
+  ExternalLink,
+  Layers,
 } from 'lucide-react';
 import { formatEther, formatTimeAgo, truncateHash, formatNumber } from '@/lib/format-utils';
 import Link from 'next/link';
@@ -55,6 +59,7 @@ export default async function AddressPage({ params, searchParams }: AddressPageP
 
   let addressData;
   let metadata;
+  let contractMetadata;
   let transactions;
   let tokenBalances;
   let tokenTransfers;
@@ -65,6 +70,7 @@ export default async function AddressPage({ params, searchParams }: AddressPageP
     [
       addressData,
       metadata,
+      contractMetadata,
       transactions,
       tokenBalances,
       tokenTransfers,
@@ -72,6 +78,7 @@ export default async function AddressPage({ params, searchParams }: AddressPageP
     ] = await Promise.all([
       getAddress(address),
       getAddressMetadata(address).catch(() => null),
+      getContractMetadata(address).catch(() => null),
       getAddressTransactions(address, historyPage, 20),
       getAddressTokenBalances(address, tokensPage, 20),
       getAddressTokenTransfers(address, transfersPage, 20),
@@ -106,23 +113,89 @@ export default async function AddressPage({ params, searchParams }: AddressPageP
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-[#ff66c4] rounded-lg">
-              {addressData.isContract ? (
-                <FileCode className="h-6 w-6 text-white" />
-              ) : (
-                <Wallet className="h-6 w-6 text-white" />
-              )}
-            </div>
+            {contractMetadata?.protocol?.logoUrl ? (
+              <img
+                src={contractMetadata.protocol.logoUrl}
+                alt={contractMetadata.protocol.name}
+                className="w-12 h-12 rounded-lg"
+              />
+            ) : (
+              <div className="p-3 bg-[#ff66c4] rounded-lg">
+                {addressData.isContract ? (
+                  <FileCode className="h-6 w-6 text-white" />
+                ) : (
+                  <Wallet className="h-6 w-6 text-white" />
+                )}
+              </div>
+            )}
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl font-mono font-bold text-zinc-900 dark:text-white">
-                  {truncateHash(address, 6, 6)}
-                </h1>
+              <div className="flex items-center gap-3 flex-wrap">
+                {contractMetadata?.contractName || contractMetadata?.nickname ? (
+                  <h1 className="text-xl font-bold text-zinc-900 dark:text-white">
+                    {contractMetadata.nickname || contractMetadata.contractName}
+                  </h1>
+                ) : (
+                  <h1 className="text-xl font-mono font-bold text-zinc-900 dark:text-white">
+                    {truncateHash(address, 6, 6)}
+                  </h1>
+                )}
                 <CopyButton text={address} />
               </div>
-              <Badge variant="outline" className="mt-1 text-xs bg-transparent border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400">
-                {addressData.isContract ? 'CONTRACT' : 'WALLET'}
-              </Badge>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className="text-xs bg-transparent border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400">
+                  {addressData.isContract ? 'CONTRACT' : 'WALLET'}
+                </Badge>
+                {contractMetadata?.protocol && (
+                  <Badge className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-0">
+                    <Layers className="h-3 w-3 mr-1" />
+                    {contractMetadata.protocol.name}
+                  </Badge>
+                )}
+              </div>
+              <div className="text-xs font-mono text-zinc-500 dark:text-zinc-400 mt-1 break-all">
+                {address}
+              </div>
+              {contractMetadata?.protocol && (
+                <div className="flex items-center gap-2 mt-2">
+                  {contractMetadata.protocol.website && (
+                    <a
+                      href={contractMetadata.protocol.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-zinc-500 hover:text-[#ff66c4] flex items-center gap-1"
+                    >
+                      <Globe className="h-3 w-3" />
+                      Website
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                  {contractMetadata.protocol.docs && (
+                    <a
+                      href={contractMetadata.protocol.docs}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-zinc-500 hover:text-[#ff66c4]"
+                    >
+                      Docs
+                    </a>
+                  )}
+                  {contractMetadata.protocol.github && (
+                    <a
+                      href={contractMetadata.protocol.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-zinc-500 hover:text-[#ff66c4]"
+                    >
+                      GitHub
+                    </a>
+                  )}
+                </div>
+              )}
+              {contractMetadata?.notes && (
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 max-w-lg">
+                  {contractMetadata.notes}
+                </p>
+              )}
             </div>
           </div>
           <Link href="/">
