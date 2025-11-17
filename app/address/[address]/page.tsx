@@ -281,7 +281,15 @@ export default async function AddressPage({ params, searchParams }: AddressPageP
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <Link href={`/tx/${tx.hash}`}>
-                                {tx.methodId && tx.methodId !== '0x' ? (
+                                {tx.eventName ? (
+                                  <Badge variant="outline" className="text-xs font-mono bg-pink-100 dark:bg-pink-900/50 border-pink-300 dark:border-pink-700 text-[#ff66c4]">
+                                    {tx.eventName}
+                                  </Badge>
+                                ) : tx.logs && tx.logs.length > 0 && tx.logs.some(log => log.eventName) ? (
+                                  <Badge variant="outline" className="text-xs font-mono bg-pink-100 dark:bg-pink-900/50 border-pink-300 dark:border-pink-700 text-[#ff66c4]">
+                                    {tx.logs.find(log => log.eventName)?.eventName}
+                                  </Badge>
+                                ) : tx.methodId && tx.methodId !== '0x' ? (
                                   <Badge variant="outline" className="text-xs font-mono bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300">
                                     {tx.functionSignature ? tx.functionSignature.split('(')[0] : tx.methodId.slice(0, 10)}
                                   </Badge>

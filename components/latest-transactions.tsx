@@ -114,7 +114,15 @@ export function LatestTransactions({ initialData }: LatestTransactionsProps) {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
-                      {tx.methodId && tx.methodId !== '0x' ? (
+                      {tx.eventName ? (
+                        <Badge variant="outline" className="text-[10px] font-mono bg-pink-100 dark:bg-pink-900/50 border-pink-300 dark:border-pink-700 text-[#ff66c4] px-1.5 py-0.5">
+                          {tx.eventName}
+                        </Badge>
+                      ) : tx.logs && tx.logs.length > 0 && tx.logs.some(log => log.eventName) ? (
+                        <Badge variant="outline" className="text-[10px] font-mono bg-pink-100 dark:bg-pink-900/50 border-pink-300 dark:border-pink-700 text-[#ff66c4] px-1.5 py-0.5">
+                          {tx.logs.find(log => log.eventName)?.eventName}
+                        </Badge>
+                      ) : tx.methodId && tx.methodId !== '0x' ? (
                         <Badge variant="outline" className="text-[10px] font-mono bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-[#ff66c4] px-1.5 py-0.5">
                           {tx.functionSignature ? tx.functionSignature.split('(')[0] : tx.methodId.slice(0, 10)}
                         </Badge>

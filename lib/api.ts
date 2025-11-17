@@ -43,6 +43,7 @@ export interface Transaction {
   input?: string;
   methodId?: string;
   functionSignature?: string;
+  eventName?: string;
   status?: boolean;
   type?: number;
   chainId?: number;
