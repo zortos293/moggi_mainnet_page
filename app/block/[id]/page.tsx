@@ -1,9 +1,10 @@
 import { getBlock } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
-import { Box, Clock, User, Zap, Database, ArrowLeft, CheckCircle2, XCircle, Copy } from 'lucide-react';
+import { Box, Clock, User, Zap, Database, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
 import { formatEther, formatGwei, formatTimestamp, formatTimeAgo, truncateHash, formatNumber, formatBytes, calculatePercentage } from '@/lib/format-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/copy-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,9 +59,7 @@ export default async function BlockPage({ params }: BlockPageProps) {
                 <h1 className="text-xl font-mono font-bold text-zinc-900 dark:text-white">
                   Block #{formatNumber(block.number)}
                 </h1>
-                <button className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300">
-                  <Copy className="h-4 w-4" />
-                </button>
+                <CopyButton text={block.number.toString()} />
               </div>
               <div className="flex items-center gap-2 mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                 <Clock className="h-4 w-4" />

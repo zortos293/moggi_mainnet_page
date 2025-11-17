@@ -108,6 +108,7 @@ export interface Token {
   totalSupply?: string;
   transferCount?: number;
   holderCount?: number;
+  tokenType?: 'ERC20' | 'ERC721';
   createdAt?: string;
 }
 
@@ -460,7 +461,7 @@ export async function getEnrichedTransaction(txHash: string): Promise<EnrichedTr
 }
 
 // Token API
-export interface Token {
+export interface TokenDetail {
   address: string;
   name: string;
   symbol: string;
@@ -519,7 +520,7 @@ export interface TokenHoldersResponse {
   };
 }
 
-export async function getToken(address: string): Promise<Token> {
+export async function getToken(address: string): Promise<TokenDetail> {
   const res = await fetch(`${API_BASE_URL}/api/tokens/${address}`, {
     cache: 'no-store',
   });

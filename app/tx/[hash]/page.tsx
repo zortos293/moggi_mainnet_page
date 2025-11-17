@@ -1,9 +1,10 @@
 import { getEnrichedTransaction, getAddressMetadata, getAddress } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRightLeft, CheckCircle2, XCircle, Clock, Zap, FileCode, ArrowLeft, Box, Wallet, Copy } from 'lucide-react';
+import { ArrowRightLeft, CheckCircle2, XCircle, Clock, Zap, FileCode, ArrowLeft, Box, Wallet } from 'lucide-react';
 import { formatEther, formatGwei, formatTimestamp, formatTimeAgo, truncateHash, formatNumber } from '@/lib/format-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/copy-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,9 +68,7 @@ export default async function TransactionPage({ params }: TransactionPageProps) 
                 <h1 className="text-xl font-mono font-bold text-zinc-900 dark:text-white">
                   {truncateHash(transaction.hash, 8, 8)}
                 </h1>
-                <button className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300">
-                  <Copy className="h-4 w-4" />
-                </button>
+                <CopyButton text={transaction.hash} />
               </div>
               <div className="flex items-center gap-2 mt-1">
                 {transaction.status !== undefined && (

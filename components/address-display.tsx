@@ -1,17 +1,14 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Copy, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
+import { CopyButton } from '@/components/copy-button';
 
 interface AddressDisplayProps {
   address: string;
 }
 
 export function AddressDisplay({ address }: AddressDisplayProps) {
-  const handleCopy = () => {
-    navigator.clipboard.writeText(address);
-  };
-
   return (
     <div className="space-y-2">
       <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">ADDRESS</div>
@@ -22,10 +19,12 @@ export function AddressDisplay({ address }: AddressDisplayProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={handleCopy}
+          asChild
           className="shrink-0"
         >
-          <Copy className="h-4 w-4" />
+          <div className="flex items-center justify-center">
+            <CopyButton text={address} />
+          </div>
         </Button>
         <Button
           variant="outline"

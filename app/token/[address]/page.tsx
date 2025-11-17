@@ -1,10 +1,11 @@
 import { getToken, getTokenTransfers, getTokenHolders } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Coins, Users, ArrowRightLeft, ArrowLeft, Clock, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Coins, Users, ArrowRightLeft, ArrowLeft, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatNumber, truncateHash, formatTimeAgo } from '@/lib/format-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/copy-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,9 +85,7 @@ export default async function TokenPage({ params, searchParams }: TokenPageProps
                 <Badge variant="outline" className="text-sm bg-transparent border-zinc-300 dark:border-zinc-700 text-[#ff66c4]">
                   {token.symbol}
                 </Badge>
-                <button className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300">
-                  <Copy className="h-4 w-4" />
-                </button>
+                <CopyButton text={token.address} />
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 break-all">
@@ -113,7 +112,7 @@ export default async function TokenPage({ params, searchParams }: TokenPageProps
               <Badge className="bg-[#ff66c4] text-white text-xs font-mono">TOTAL SUPPLY</Badge>
             </div>
             <div className="text-2xl font-mono font-bold text-zinc-900 dark:text-white">
-              {formatTokenAmount(token.totalSupply, token.decimals || 18)}
+              {formatTokenAmount(token.totalSupply || '0', token.decimals || 18)}
             </div>
             <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{token.symbol}</div>
           </div>
@@ -123,7 +122,7 @@ export default async function TokenPage({ params, searchParams }: TokenPageProps
               <Badge className="bg-[#ff66c4] text-white text-xs font-mono">HOLDERS</Badge>
             </div>
             <div className="text-2xl font-mono font-bold text-zinc-900 dark:text-white">
-              {formatNumber(token.holderCount)}
+              {formatNumber(token.holderCount || 0)}
             </div>
           </div>
 
@@ -132,7 +131,7 @@ export default async function TokenPage({ params, searchParams }: TokenPageProps
               <Badge className="bg-[#ff66c4] text-white text-xs font-mono">TRANSFERS</Badge>
             </div>
             <div className="text-2xl font-mono font-bold text-zinc-900 dark:text-white">
-              {formatNumber(token.transferCount)}
+              {formatNumber(token.transferCount || 0)}
             </div>
           </div>
 

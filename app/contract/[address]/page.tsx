@@ -10,7 +10,6 @@ import {
   FileCode2,
   ArrowRightLeft,
   ArrowLeft,
-  Copy,
   Clock,
   User,
   Hash,
@@ -23,6 +22,7 @@ import {
 import { formatEther, formatTimeAgo, truncateHash, formatNumber } from '@/lib/format-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/copy-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -130,9 +130,7 @@ export default async function ContractPage({ params, searchParams }: ContractPag
                 <Badge variant="outline" className="text-xs bg-transparent border-[#ff66c4] text-[#ff66c4]">
                   CONTRACT
                 </Badge>
-                <button className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300">
-                  <Copy className="h-4 w-4" />
-                </button>
+                <CopyButton text={address} />
               </div>
               <div className="text-xs font-mono text-zinc-500 dark:text-zinc-400 mt-1 break-all">
                 {address}
