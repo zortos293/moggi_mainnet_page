@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export interface Block {
   number: string;
@@ -62,6 +62,9 @@ export interface Log {
   logIndex: number;
   blockNumber: string;
   transactionHash: string;
+  eventName?: string;
+  eventSignature?: string;
+  decodedParams?: Record<string, unknown>;
 }
 
 export interface InternalTransaction {
@@ -308,12 +311,16 @@ export async function getAddressInternalTransactions(
 
 // Metadata API
 export async function getAddressMetadata(address: string): Promise<AddressMetadata | null> {
+  // Temporarily disabled - return null immediately
+  return null;
+  /*
   const res = await fetch(`${API_BASE_URL}/api/metadata/address/${address}`, {
     cache: 'no-store',
   });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Failed to fetch address metadata: ${res.statusText}`);
   return res.json();
+  */
 }
 
 // NFT API
@@ -449,5 +456,129 @@ export async function getEnrichedTransaction(txHash: string): Promise<EnrichedTr
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`Failed to fetch enriched transaction: ${res.statusText}`);
+  return res.json();
+}
+
+// Token API
+export interface Token {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals?: number;
+  totalSupply: string;
+  tokenType: 'ERC20' | 'ERC721';
+  holderCount: number;
+  transferCount: number;
+}
+
+export interface TokenTransferItem {
+  from: string;
+  to: string;
+  value?: string;
+  tokenId?: string;
+  transactionHash: string;
+  blockNumber: string;
+  timestamp: string;
+  logIndex: number;
+}
+
+export interface TokenHolder {
+  address: string;
+  balance: string;
+}
+
+export interface TokenTransfersResponse {
+  data: TokenTransferItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  token: {
+    address: string;
+    name: string;
+    symbol: string;
+    decimals?: number;
+  };
+}
+
+export interface TokenHoldersResponse {
+  data: TokenHolder[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  token: {
+    address: string;
+    name: string;
+    symbol: string;
+    decimals?: number;
+  };
+}
+
+export async function getToken(address: string): Promise<Token> {
+  const res = await fetch(`${API_BASE_URL}/api/tokens/${address}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Failed to fetch token: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getTokenTransfers(
+  address: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<TokenTransfersResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/tokens/${address}/transfers?page=${page}&limit=${limit}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch token transfers: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getTokenHolders(
+  address: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<TokenHoldersResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/tokens/${address}/holders?page=${page}&limit=${limit}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch token holders: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getTokensList(
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<Token>> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/tokens?page=${page}&limit=${limit}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch tokens list: ${res.statusText}`);
+  return res.json();
+}
+
+// Stats API
+export interface BlockchainStats {
+  latestBlock: number;
+  totalTransactions: number;
+  totalContracts: number;
+  totalErc20Tokens: number;
+  totalErc721Tokens: number;
+  totalAddresses?: number;
+}
+
+export async function getBlockchainStats(): Promise<BlockchainStats> {
+  const res = await fetch(`${API_BASE_URL}/api/stats`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Failed to fetch blockchain stats: ${res.statusText}`);
   return res.json();
 }

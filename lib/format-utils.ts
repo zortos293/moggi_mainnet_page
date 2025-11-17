@@ -81,6 +81,24 @@ export function formatNumber(num: string | number): string {
 }
 
 /**
+ * Format a large number in compact form (e.g., 1.2M, 3.5B)
+ */
+export function formatCompactNumber(num: string | number | undefined | null): string {
+  if (num === undefined || num === null) return '0';
+
+  const n = typeof num === 'string' ? parseInt(num) : num;
+
+  if (isNaN(n)) return '0';
+
+  if (n >= 1e12) return `${(n / 1e12).toFixed(2)}T`;
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(2)}K`;
+
+  return n.toString();
+}
+
+/**
  * Format bytes to human readable size
  */
 export function formatBytes(bytes: number): string {
